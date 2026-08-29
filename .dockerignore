@@ -1,0 +1,3 @@
+.git
+.lab/*
+!.lab/ansible_lab.pub

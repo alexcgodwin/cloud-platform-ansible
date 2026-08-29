@@ -1,0 +1,9 @@
+---
+- name: Configure Linux infrastructure
+  hosts: linux_servers
+  become: true
+  gather_facts: true
+
+  roles:
+    - common
+    - nginx

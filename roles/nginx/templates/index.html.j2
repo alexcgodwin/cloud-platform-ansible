@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>AlexCG Ansible Managed Server</title>
+</head>
+<body>
+    <h1>Ansible Managed Linux Server</h1>
+
+    <p>Hostname: {{ ansible_hostname }}</p>
+    <p>Operating System: {{ ansible_distribution }} {{ ansible_distribution_version }}</p>
+    <p>Environment: {{ environment_name }}</p>
+    <p>Status: Healthy</p>
+</body>
+</html>

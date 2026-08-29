@@ -1,0 +1,39 @@
+---
+- name: Install NGINX
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+
+- name: Deploy managed NGINX configuration
+  ansible.builtin.template:
+    src: default.conf.j2
+    dest: /etc/nginx/sites-available/default
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload NGINX
+
+- name: Deploy server status page
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: /var/www/html/index.html
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Validate NGINX configuration
+  ansible.builtin.command:
+    cmd: nginx -t
+  changed_when: false
+
+- name: Check whether NGINX is running
+  ansible.builtin.command:
+    cmd: pgrep -x nginx
+  register: nginx_process
+  changed_when: false
+  failed_when: false
+
+- name: Start NGINX when required
+  ansible.builtin.command:
+    cmd: nginx
+  when: nginx_process.rc != 0

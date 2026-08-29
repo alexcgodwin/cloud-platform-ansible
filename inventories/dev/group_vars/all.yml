@@ -1,0 +1,16 @@
+environment_name: dev
+
+platform_user: platformops
+platform_group: platformops
+
+common_packages:
+  - curl
+  - git
+  - jq
+  - unzip
+  - vim
+  - ca-certificates
+
+platform_directories:
+  - /opt/platform
+  - /var/log/platform

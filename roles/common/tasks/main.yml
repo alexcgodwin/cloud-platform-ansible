@@ -1,0 +1,51 @@
+---
+- name: Refresh apt package cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install common administration packages
+  ansible.builtin.apt:
+    name: "{{ common_packages }}"
+    state: present
+
+- name: Create platform operations group
+  ansible.builtin.group:
+    name: "{{ platform_group }}"
+    state: present
+
+- name: Create platform operations user
+  ansible.builtin.user:
+    name: "{{ platform_user }}"
+    group: "{{ platform_group }}"
+    groups:
+      - sudo
+    append: true
+    shell: /bin/bash
+    create_home: true
+    state: present
+
+- name: Create platform operations SSH directory
+  ansible.builtin.file:
+    path: "/home/{{ platform_user }}/.ssh"
+    state: directory
+    owner: "{{ platform_user }}"
+    group: "{{ platform_group }}"
+    mode: "0700"
+
+- name: Install platform operations SSH public key
+  ansible.builtin.copy:
+    content: "{{ lookup('ansible.builtin.file', playbook_dir + '/../.lab/ansible_lab.pub') }}\n"
+    dest: "/home/{{ platform_user }}/.ssh/authorized_keys"
+    owner: "{{ platform_user }}"
+    group: "{{ platform_group }}"
+    mode: "0600"
+
+- name: Create managed platform directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ platform_user }}"
+    group: "{{ platform_group }}"
+    mode: "0755"
+  loop: "{{ platform_directories }}"

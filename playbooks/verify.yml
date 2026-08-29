@@ -1,0 +1,31 @@
+---
+- name: Verify managed Linux infrastructure
+  hosts: linux_servers
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Verify NGINX configuration
+      ansible.builtin.command:
+        cmd: nginx -t
+      changed_when: false
+
+    - name: Verify platform operations user
+      ansible.builtin.command:
+        cmd: id platformops
+      changed_when: false
+
+    - name: Verify HTTP health endpoint
+      ansible.builtin.uri:
+        url: http://127.0.0.1/health
+        method: GET
+        return_content: true
+        status_code: 200
+      register: health_result
+
+    - name: Assert application health
+      ansible.builtin.assert:
+        that:
+          - health_result.status == 200
+          - "'healthy' in health_result.content"
+        success_msg: "Linux server automation verified successfully."

@@ -1,0 +1,31 @@
+services:
+
+  node1:
+    image: alexcg-ansible-node:local
+    build:
+      context: .
+      dockerfile: lab/Dockerfile.node
+    hostname: ansible-node1
+    ports:
+      - "8088:80"
+
+  node2:
+    image: alexcg-ansible-node:local
+    hostname: ansible-node2
+    ports:
+      - "8089:80"
+
+  ansible:
+    image: alexcg-ansible-controller:local
+    build:
+      context: .
+      dockerfile: lab/Dockerfile.controller
+    working_dir: /workspace
+    environment:
+      ANSIBLE_CONFIG: /workspace/ansible.cfg
+    volumes:
+      - ./:/workspace
+      - ./.lab/ansible_lab:/run/ansible_lab:ro
+    depends_on:
+      - node1
+      - node2
