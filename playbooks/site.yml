@@ -3,7 +3,15 @@
   hosts: linux_servers
   become: true
   gather_facts: true
-
+  serial: 1
+  any_errors_fatal: true
+  pre_tasks:
+    - name: Prevent unapproved production changes
+      ansible.builtin.assert:
+        that:
+          - environment_name in ["dev", "test", "prod"]
+          - environment_name != "prod" or (approve_production_configuration | default(false) | bool)
+        fail_msg: Production configuration requires explicit change approval.
   roles:
     - common
     - nginx

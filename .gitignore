@@ -1,2 +1,5 @@
 .lab/ansible_lab
 .lab/ansible_lab.pub
+# Python transient test files
+**/__pycache__/
+**/*.pyc
