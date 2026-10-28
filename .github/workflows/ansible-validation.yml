@@ -1,0 +1,53 @@
+name: Ansible configuration quality
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  syntax-and-contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Install Ansible runtime and YAML parser
+        run: python -m pip install 'ansible-core==2.19.3' 'PyYAML==6.0.3'
+      - name: Syntax and inventory review
+        run: |
+          ansible-playbook -i inventories/dev/hosts.yml playbooks/site.yml --syntax-check
+          ansible-playbook -i inventories/dev/hosts.yml playbooks/verify.yml --syntax-check
+          ansible-playbook -i inventories/dev/hosts.yml playbooks/preflight.yml --syntax-check
+      - name: Policy and deployment invariants
+        run: python -m unittest discover -s tests -v
+      - name: Shell script syntax
+        run: sh -n lab/controller-entrypoint.sh
+  container-integration:
+    runs-on: ubuntu-24.04
+    needs: syntax-and-contracts
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Generate ephemeral CI-only SSH key
+        run: |
+          mkdir -p .lab
+          ssh-keygen -q -t ed25519 -N '' -f .lab/ansible_lab
+          chmod 600 .lab/ansible_lab
+      - name: Launch isolated Ubuntu managed nodes
+        run: |
+          docker compose build --pull node1 ansible
+          docker compose up -d node1 node2
+      - name: Apply Ansible configuration and verify
+        run: |
+          docker compose run --rm ansible ansible-playbook -i inventories/dev/hosts.yml playbooks/site.yml
+          docker compose run --rm ansible ansible-playbook -i inventories/dev/hosts.yml playbooks/verify.yml
+      - name: Check repeat-run idempotency
+        run: |
+          docker compose run --rm ansible ansible-playbook -i inventories/dev/hosts.yml playbooks/site.yml | tee second-run.txt
+          python scripts/assert_idempotent.py second-run.txt
+      - name: Stop ephemeral test infrastructure
+        if: always()
+        run: docker compose down --remove-orphans --volumes
